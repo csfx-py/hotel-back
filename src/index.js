@@ -5,10 +5,19 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const server = require("http").createServer(app);
-const io = require("socket.io")(server);
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "http://localhost:3000",
+  },
+});
 
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
 
 const mongoose = require("mongoose");
 const MONGO_URI = process.env.MONGO_URI;
@@ -26,18 +35,23 @@ mongoose.connect(
   }
 );
 
+const authRoutes = require("./routes/Auth/AuthManager");
+const dataRoutes = require("./routes/Data/DataManager");
+
 // express routing
 app.get("/", (req, res) => {
   res.send("hello");
 });
 
+app.use("/auth", authRoutes);
+app.use("/data", dataRoutes);
+
 // socket.io handlers
 io.on("connection", (socket) => {
-  console.log(socket.id);
-
   socket.on("pass", (data) => {
     console.log(data);
   });
+
   socket.on("disconnect", () => {
     socket.leave("hotel");
   });
