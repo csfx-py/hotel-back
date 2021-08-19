@@ -4,12 +4,12 @@ const PORT = process.env.PORT || 5000;
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const server = require("http").createServer(app);
-const io = require("socket.io")(server, {
-  cors: {
-    origin: "http://localhost:3000",
-  },
-});
+// const server = require("http").createServer(app);
+// const io = require("socket.io")(server, {
+//   cors: {
+//     origin: "http://localhost:3000",
+//   },
+// });
 
 app.use(express.json());
 app.use(
@@ -36,7 +36,8 @@ mongoose.connect(
 );
 
 const authRoutes = require("./routes/Auth/AuthManager");
-const dataRoutes = require("./routes/Data/DataManager");
+const dataRoutes = require("./routes/Data/HotelManager");
+const clientRoutes = require("./routes/Data/ClientManager");
 
 // express routing
 app.get("/", (req, res) => {
@@ -44,19 +45,20 @@ app.get("/", (req, res) => {
 });
 
 app.use("/auth", authRoutes);
-app.use("/data", dataRoutes);
+app.use("/hotel", dataRoutes);
+app.use("/client", clientRoutes);
 
 // socket.io handlers
-io.on("connection", (socket) => {
-  socket.on("pass", (data) => {
-    console.log(data);
-  });
+// io.on("connection", (socket) => {
+//   socket.on("pass", (data) => {
+//     console.log(data);
+//   });
 
-  socket.on("disconnect", () => {
-    socket.leave("hotel");
-  });
-});
+//   socket.on("disconnect", () => {
+//     socket.leave("hotel");
+//   });
+// });
 
-server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });

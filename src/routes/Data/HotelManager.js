@@ -6,16 +6,15 @@ const User = require("../../models/User");
 // fetch menu array from user model
 router.get("/menu", async (req, res) => {
   const { shopName } = req.query;
-  const user = await User.findOne({ shopName });
-  if (!user) return res.status(204).send([]);
+  const user = await User.findOne({ shopName }).select("menu");
+  if (!user) return res.status(404).send("Not found");
 
-  if (user.menu.length === 0) return res.status(204).send([]);
-
+  if (user.menu.length === 0) return res.status(204).send("empty menu");
   return res.status(200).send(user.menu);
 });
 
 // update menu array from user model
-router.put("/menu", async (req, res) => {
+router.put("/menu", verifyManager, async (req, res) => {
   const { shopName, itemName, itemPrice } = req.body;
   const user = await User.findOne({ shopName });
   if (!user) return res.status(204).send("User not found");
@@ -32,7 +31,7 @@ router.put("/menu", async (req, res) => {
 });
 
 // delete menu item from user model
-router.delete("/menu", async (req, res) => {
+router.delete("/menu", verifyManager, async (req, res) => {
   const { shopName, itemName } = req.query;
   const user = await User.findOne({ shopName });
   if (!user) return res.status(204).send("User not found");
