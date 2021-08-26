@@ -4,12 +4,12 @@ const PORT = process.env.PORT || 5000;
 const express = require("express");
 const app = express();
 const cors = require("cors");
-// const server = require("http").createServer(app);
-// const io = require("socket.io")(server, {
-//   cors: {
-//     origin: "http://localhost:3000",
-//   },
-// });
+const server = require("http").createServer(app);
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "http://localhost:3000",
+  },
+});
 
 app.use(express.json());
 app.use(
@@ -49,16 +49,19 @@ app.use("/hotel", dataRoutes);
 app.use("/client", clientRoutes);
 
 // socket.io handlers
-// io.on("connection", (socket) => {
-//   socket.on("pass", (data) => {
-//     console.log(data);
-//   });
+io.on("connection", (socket) => {
+  console.log("------------------------------------------------");
+  console.log(socket.handshake.query.shopName);
+  console.log(socket.handshake.query.tableID);
+  socket.on("pass", (data) => {
+    console.log(data);
+  });
 
-//   socket.on("disconnect", () => {
-//     socket.leave("hotel");
-//   });
-// });
+  socket.on("disconnect", () => {
+    socket.leave("hotel");
+  });
+});
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });

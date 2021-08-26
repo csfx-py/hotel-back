@@ -41,7 +41,7 @@ router.post("/register", async (req, res) => {
   });
   try {
     const savedUser = await user.save();
-    res.send(createToken(user, process.env.ACCESS_TOKEN_SEC, "3d"));
+    res.status(200).send(createToken(user, process.env.ACCESS_TOKEN_SEC, "3d"));
   } catch (err) {
     res.status(500).send(err || "Internal Server error");
   }
@@ -57,7 +57,7 @@ router.post("/login", async (req, res) => {
 
   // authenticate
   const authenticaed = await bcrypt.compare(password, user.password);
-  if (!authenticaed) return res.status(403).json("Incorrect password");
+  if (!authenticaed) return res.status(401).send("Incorrect password");
 
   res.send(createToken(user, process.env.ACCESS_TOKEN_SEC, "3d"));
 });
