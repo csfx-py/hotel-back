@@ -86,8 +86,12 @@ io.on("connection", (socket) => {
 
     const manager = managerSockets.find((s) => s.shopName === shopName);
     const clients = clientSockets.filter((s) => s.shopName === shopName);
+    const client = clients.find(
+      (s) => s.shopName === shopName && s.tableID === tableID
+    );
     try {
       socket.to(manager.id).emit("managerOrder", clients);
+      io.to(id).emit("orders", client.items);
     } catch (e) {
       console.log(e);
     }
@@ -98,19 +102,42 @@ io.on("connection", (socket) => {
   socket.on("clientOrder", (data, client) => {
     const manager = managerSockets.find((s) => s.shopName === shopName);
 
-    const index = clientSockets.findIndex(
+    const customer = clientSockets.find(
       (s) => s.shopName === shopName && s.tableID === tableID
     );
-    clientSockets[index].items = [...clientSockets[index].items, ...data];
+    customer.items = [...customer.items, ...data];
 
     const clients = clientSockets.filter((s) => s.shopName === shopName);
     socket.to(manager.id).emit("managerOrder", clients);
-    socket.to(manager.id).emit("managerNewOrder", client, data);
+    socket.to(customer.id).emit("orders", customer.items);
+    socket.to(manager.id).emit("managerNewOrder", data, client);
+    io.to(id).emit("orders", customer.items);
   });
 
-  socket.on("removeTable", (table) => {
-    clientSockets = clientSockets.filter((c) => c.tableID !== table);
+  socket.on("removeItem", (data, client) => {
+    const manager = managerSockets.find((s) => s.shopName === shopName);
+
+    const customer = clientSockets.find(
+      (s) => s.shopName === shopName && s.tableID === client
+    );
+
+    customer.items = customer.items.filter((i) => i.id !== data.id);
+
+    const clients = clientSockets.filter((s) => s.shopName === shopName);
+    io.to(manager.id).emit("managerOrder", clients);
+  });
+
+  socket.on("removeConn", (table) => {
+    const client = clientSockets.find(
+      (s) => s.shopName === shopName && s.tableID === table
+    );
+    socket.to(client.id).emit("complete");
     socket.emit("message", `${table} disconnected`);
+    clientSockets = clientSockets.filter(
+      (c) => c.shopName !== shopName && c.tableID !== table
+    );
+    const clients = clientSockets.filter((s) => s.shopName === shopName);
+    io.to(id).emit("managerOrder", clients);
   });
 
   // socket.on("disconnect", () => {

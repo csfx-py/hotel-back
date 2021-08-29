@@ -54,7 +54,7 @@ const userSchema = new mongoose.Schema({
           min: 4,
           max: 30,
         },
-        price: {
+        total: {
           type: Number,
           required: true,
           min: 0,

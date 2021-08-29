@@ -46,4 +46,21 @@ router.delete("/menu", verifyManager, async (req, res) => {
   }
 });
 
+router.put("/order", verifyManager, async (req, res) => {
+  const { shopName, tableID, orders, total } = req.body;
+
+  const user = await User.findOne({ shopName });
+  if (!user) return res.status(204).send("User not found");
+
+  try {
+    user.orders.push({ name: tableID, total, items: orders });
+    await user.save();
+    
+    return res.status(200).send("saved");
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send("Error while saving order");
+  }
+});
+
 module.exports = router;

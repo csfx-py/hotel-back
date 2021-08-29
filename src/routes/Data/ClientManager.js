@@ -25,24 +25,6 @@ router.post("/hotel", async (req, res) => {
   return res.status(401).send("Incorrect Password");
 });
 
-router.post("/checkout", VerifyManager, async (req, res) => {
-  const { shopName, tableID, orders, total } = req.body;
-
-  const user = await User.findOne({ shopName });
-  if (!user) return res.status(204).send("User not found");
-
-  try {
-    user.orders.push({ name: tableID, price: total, items: orders });
-    await user.save();
-    activeConn = activeConn.filter(
-      (conn) => conn.shopName !== shopName && conn.tableID !== tableID
-    );
-    return res.status(200).send("saved");
-  } catch (err) {
-    return res.status(500).send("Error while saving order");
-  }
-});
-
 // fetch menu array from user model
 router.get("/menu", async (req, res) => {
   const { shopName } = req.query;
