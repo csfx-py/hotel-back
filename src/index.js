@@ -48,18 +48,74 @@ app.use("/auth", authRoutes);
 app.use("/hotel", dataRoutes);
 app.use("/client", clientRoutes);
 
+let managerSockets = [];
+
+let clientSockets = [];
+
 // socket.io handlers
 io.on("connection", (socket) => {
-  console.log("------------------------------------------------");
-  console.log(socket.handshake.query.shopName);
-  console.log(socket.handshake.query.tableID);
-  socket.on("pass", (data) => {
-    console.log(data);
+  const { shopName, tableID } = socket.handshake.query;
+  const id = socket.id;
+  const user = { shopName, tableID, items: [], id };
+
+  if (!tableID) {
+    if (!managerSockets.filter((s) => s.shopName === shopName).length)
+      managerSockets.push(user);
+    else {
+      const index = managerSockets.findIndex((s) => s.shopName === shopName);
+      managerSockets[index].id = id;
+    }
+
+    const clients = clientSockets.filter((s) => s.shopName === shopName);
+    io.to(id).emit("managerOrder", clients);
+  }
+
+  if (tableID) {
+    if (
+      !clientSockets.filter(
+        (s) => s.shopName === shopName && s.tableID === tableID
+      ).length
+    )
+      clientSockets.push(user);
+    else {
+      const index = clientSockets.findIndex(
+        (s) => s.shopName === shopName && s.tableID === tableID
+      );
+      clientSockets[index].id = id;
+    }
+
+    const manager = managerSockets.find((s) => s.shopName === shopName);
+    const clients = clientSockets.filter((s) => s.shopName === shopName);
+    try {
+      socket.to(manager.id).emit("managerOrder", clients);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  // socket.emit("message", "connected");
+
+  socket.on("clientOrder", (data, client) => {
+    const manager = managerSockets.find((s) => s.shopName === shopName);
+
+    const index = clientSockets.findIndex(
+      (s) => s.shopName === shopName && s.tableID === tableID
+    );
+    clientSockets[index].items = [...clientSockets[index].items, ...data];
+
+    const clients = clientSockets.filter((s) => s.shopName === shopName);
+    socket.to(manager.id).emit("managerOrder", clients);
+    socket.to(manager.id).emit("managerNewOrder", client, data);
   });
 
-  socket.on("disconnect", () => {
-    socket.leave("hotel");
+  socket.on("removeTable", (table) => {
+    clientSockets = clientSockets.filter((c) => c.tableID !== table);
+    socket.emit("message", `${table} disconnected`);
   });
+
+  // socket.on("disconnect", () => {
+  //   socket.leave("hotel");
+  // });
 });
 
 server.listen(PORT, () => {

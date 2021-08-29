@@ -19,7 +19,7 @@ router.put("/menu", verifyManager, async (req, res) => {
   const user = await User.findOne({ shopName });
   if (!user) return res.status(204).send("User not found");
   if (user.menu.some((item) => item.name === itemName))
-    return res.status(409).send({ message: "Item already exists" });
+    return res.status(409).send("Item already exists");
 
   try {
     user.menu.push({ name: itemName, price: itemPrice });
@@ -36,7 +36,7 @@ router.delete("/menu", verifyManager, async (req, res) => {
   const user = await User.findOne({ shopName });
   if (!user) return res.status(204).send("User not found");
   if (!user.menu.some((item) => item.name === itemName))
-    return res.status(404).send({ message: "Item not found" });
+    return res.status(404).send("Item not found");
   user.menu = user.menu.filter((item) => item.name !== itemName);
   try {
     await user.save();
