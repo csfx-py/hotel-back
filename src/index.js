@@ -50,13 +50,17 @@ app.use("/client", clientRoutes);
 
 let managerSockets = [];
 
+let tempOrders = [];
+
 let clientSockets = [];
 
 // socket.io handlers
 io.on("connection", (socket) => {
   const { shopName, tableID } = socket.handshake.query;
   const id = socket.id;
-  const user = { shopName, tableID, items: [], id };
+  const user = tableID
+    ? { shopName, tableID, items: [], id }
+    : { shopName, id };
 
   if (!tableID) {
     if (!managerSockets.filter((s) => s.shopName === shopName).length)
@@ -67,7 +71,11 @@ io.on("connection", (socket) => {
     }
 
     const clients = clientSockets.filter((s) => s.shopName === shopName);
-    io.to(id).emit("managerOrder", clients);
+    try {
+      io.to(id).emit("managerOrder", clients);
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   if (tableID) {
@@ -99,7 +107,7 @@ io.on("connection", (socket) => {
 
   // socket.emit("message", "connected");
 
-  socket.on("clientOrder", (data, client) => {
+  socket.on("clientOrder", (data) => {
     const manager = managerSockets.find((s) => s.shopName === shopName);
 
     const customer = clientSockets.find(
@@ -107,24 +115,45 @@ io.on("connection", (socket) => {
     );
     customer.items = [...customer.items, ...data];
 
+    tempOrders = [
+      ...tempOrders,
+      ...data.map((d) => {
+        return { ...d, tableID, shopName };
+      }),
+    ];
+
     const clients = clientSockets.filter((s) => s.shopName === shopName);
-    socket.to(manager.id).emit("managerOrder", clients);
-    socket.to(customer.id).emit("orders", customer.items);
-    socket.to(manager.id).emit("managerNewOrder", data, client);
-    io.to(id).emit("orders", customer.items);
+    try {
+      socket.to(manager.id).emit("managerOrder", clients);
+      socket.to(manager.id).emit("managerNewOrder", tempOrders);
+      io.to(id).emit("orders", customer.items);
+    } catch (e) {
+      console.log(e);
+    }
   });
 
-  socket.on("removeItem", (data, client) => {
-    const manager = managerSockets.find((s) => s.shopName === shopName);
+  socket.on("removeTempItem", (data) => {
+    tempOrders = tempOrders.filter((i) => i.id !== data.id);
+    const newOrders = tempOrders.filter((i) => i.shopName === shopName);
+    try {
+      io.to(id).emit("managerNewOrder", newOrders);
+    } catch (e) {
+      console.log(e);
+    }
+  });
 
+  socket.on("removeItem", (data, table) => {
     const customer = clientSockets.find(
-      (s) => s.shopName === shopName && s.tableID === client
+      (s) => s.shopName === shopName && s.tableID === table
     );
 
-    customer.items = customer.items.filter((i) => i.id !== data.id);
+    const index = customer.items.findIndex((i) => i.id === data.id);
+    customer.items.splice(index, 1);
 
     const clients = clientSockets.filter((s) => s.shopName === shopName);
-    io.to(manager.id).emit("managerOrder", clients);
+
+    io.to(id).emit("managerOrder", clients);
+    socket.to(customer.id).emit("orders", customer.items);
   });
 
   socket.on("removeConn", (table) => {
@@ -139,10 +168,6 @@ io.on("connection", (socket) => {
     const clients = clientSockets.filter((s) => s.shopName === shopName);
     io.to(id).emit("managerOrder", clients);
   });
-
-  // socket.on("disconnect", () => {
-  //   socket.leave("hotel");
-  // });
 });
 
 server.listen(PORT, () => {
