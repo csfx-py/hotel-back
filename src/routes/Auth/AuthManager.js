@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const User = require("../../models/User");
+const verifyAdmin = require("../utils/verifyAdmin");
 
 const createToken = (user, secret, exp) => {
   const { name, shopName } = user;
@@ -16,7 +17,7 @@ const createToken = (user, secret, exp) => {
   );
 };
 
-router.post("/admin", async (req, res) => {
+router.post("/admin", verifyAdmin, async (req, res) => {
   const { password } = req.body;
   if (!password || password !== process.env.ADMIN_PASS)
     return res.status(400).send("Incorrect password");
@@ -25,6 +26,12 @@ router.post("/admin", async (req, res) => {
       expiresIn: "1h",
     })
   );
+});
+
+router.get("/users", async (req, res) => {
+  const users = await User.find({}).select("name email shopName");
+  if (!users) return res.status(400).send("No users found");
+  return res.status(200).send(users);
 });
 
 router.post("/register", async (req, res) => {
