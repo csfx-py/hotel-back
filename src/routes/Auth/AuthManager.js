@@ -20,7 +20,11 @@ router.post("/admin", async (req, res) => {
   const { password } = req.body;
   if (!password || password !== process.env.ADMIN_PASS)
     return res.status(400).send("Incorrect password");
-  return res.status(200).send("Logged in");
+  return res.status(200).send(
+    jwt.sign({ admin: true }, process.env.ACCESS_TOKEN_SEC, {
+      expiresIn: "1h",
+    })
+  );
 });
 
 router.post("/register", async (req, res) => {
