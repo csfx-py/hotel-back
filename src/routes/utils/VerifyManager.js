@@ -5,7 +5,7 @@ module.exports = function (req, res, next) {
   if (!token) return res.status(401).send("Unauthorized");
 
   try {
-    const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SEC);
+    jwt.verify(token, process.env.ACCESS_TOKEN_SEC);
 
     next();
   } catch (err) {
