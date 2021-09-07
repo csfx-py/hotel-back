@@ -17,7 +17,7 @@ const createToken = (user, secret, exp) => {
   );
 };
 
-router.post("/admin", verifyAdmin, async (req, res) => {
+router.post("/admin", async (req, res) => {
   const { password } = req.body;
   if (!password || password !== process.env.ADMIN_PASS)
     return res.status(400).send("Incorrect password");
@@ -28,10 +28,21 @@ router.post("/admin", verifyAdmin, async (req, res) => {
   );
 });
 
-router.get("/users", async (req, res) => {
+router.get("/users", verifyAdmin, async (req, res) => {
   const users = await User.find({}).select("name email shopName");
   if (!users) return res.status(400).send("No users found");
   return res.status(200).send(users);
+});
+
+router.delete("/users/:id", verifyAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findByIdAndDelete(id);
+    if (!user) return res.status(400).send("User not found");
+    return res.status(200).send("User deleted");
+  } catch (err) {
+    return res.status(500).send(err);
+  }
 });
 
 router.post("/register", async (req, res) => {
