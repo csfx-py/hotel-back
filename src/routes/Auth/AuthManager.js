@@ -16,6 +16,13 @@ const createToken = (user, secret, exp) => {
   );
 };
 
+router.post("/admin", async (req, res) => {
+  const { password } = req.body;
+  if (!password || password !== process.env.ADMIN_PASS)
+    return res.status(400).send("Incorrect password");
+  return res.status(200).send("Logged in");
+});
+
 router.post("/register", async (req, res) => {
   const { name, email, password, shopName } = req.body;
 
