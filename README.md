@@ -4,8 +4,10 @@ clone the repo and cd over to the folder, install dependencies with `yarn` or `n
 
 add a .env file in root of the app using `touch .env`
 
-add `MONGO_URI` for connecting mongo db, 
+add `MONGO_URI` for connecting mongo db,
 
-`ADMIN_PASS` for logging in as admin, 
+`ADMIN_PASS` for logging in as admin,
 
 `ACCESS_TOKEN_SEC` for jwt secret
+
+`SMS_API_KEY` for fast2sms api key to sent password reset OTP
