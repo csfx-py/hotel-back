@@ -7,14 +7,14 @@ const cors = require("cors");
 const server = require("http").createServer(app);
 const io = require("socket.io")(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "https://hotel-engine.herokuapp.com"],
   },
 });
 
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "https://hotel-engine.herokuapp.com"],
     credentials: true,
   })
 );
