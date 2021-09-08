@@ -140,7 +140,12 @@ router.post("/get-otp", async (req, res) => {
       otp,
       time: Date.now(),
     };
-    otpList.push(otpObj);
+    if (otpList.find((item) => item.name === name)) {
+      reg = otpList.find((item) => item.name === name);
+      reg.otp = otp;
+    } else {
+      otpList.push(otpObj);
+    }
 
     // send otp
     const config = {
