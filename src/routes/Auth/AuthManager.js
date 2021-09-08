@@ -187,7 +187,8 @@ router.post("/verify-otp", async (req, res) => {
 });
 
 router.post("/reset-pass", async (req, res) => {
-  const { name, otp, newPassword } = req.body;
+  const { name, otp, password } = req.body;
+
   const otpObj = otpList.find((o) => o.name === name);
   if (!otpObj) return res.status(401).send("User Not Found, Try again");
   if (otpObj.otp != otp) return res.status(401).send("Incorrect otp");
@@ -199,7 +200,7 @@ router.post("/reset-pass", async (req, res) => {
   if (!user) return res.status(401).send("User not found");
 
   const salt = await bcrypt.genSalt(10);
-  const hashPass = await bcrypt.hash(newPassword, salt);
+  const hashPass = await bcrypt.hash(password, salt);
 
   try {
     user.password = hashPass;
