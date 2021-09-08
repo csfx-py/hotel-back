@@ -118,7 +118,9 @@ router.post("/changePassword", async (req, res) => {
   try {
     user.password = hashPass;
     const savedUser = await user.save();
-    return res.status(200).send(createToken(user, process.env.ACCESS_TOKEN_SEC, "3d"));
+    return res
+      .status(200)
+      .send(createToken(user, process.env.ACCESS_TOKEN_SEC, "3d"));
   } catch (err) {
     return res.status(500).send("Internal Server error");
   }
@@ -167,6 +169,16 @@ router.post("/get-otp", async (req, res) => {
     console.log(err);
     return res.status(500).send("Internal Server Error, Try again later");
   }
+});
+
+router.post("/verify-otp", async (req, res) => {
+  const { name, otp } = req.body;
+  const otpObj = otpList.find((o) => o.name === name);
+  if (!otpObj) return res.status(401).send("otp not requested");
+  if (otpObj.otp !== otp) return res.status(401).send("Incorrect otp");
+  if (otpObj.time + 300000 < Date.now())
+    return res.status(401).send("otp expired");
+  return res.status(200).send("otp verified");
 });
 
 module.exports = router;
