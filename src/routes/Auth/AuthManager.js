@@ -1,9 +1,14 @@
 const router = require("express").Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { default: axios } = require("axios");
+
+const OTP_URL = "https://www.fast2sms.com/dev/bulkV2";
 
 const User = require("../../models/User");
 const verifyAdmin = require("../utils/verifyAdmin");
+
+let otpList = [];
 
 const createToken = (user, secret, exp) => {
   const { name, shopName } = user;
@@ -56,7 +61,8 @@ router.post("/register", async (req, res) => {
   if (mailExists) return res.status(400).send("Email already registered");
   //check existing email
   const phoneExists = await User.findOne({ phone });
-  if (phoneExists) return res.status(400).send("Phone number already registered");
+  if (phoneExists)
+    return res.status(400).send("Phone number already registered");
   //check existing shop name
   const shopExists = await User.findOne({ shopName });
   if (shopExists) return res.status(400).send("Shop name already taken");
@@ -76,7 +82,7 @@ router.post("/register", async (req, res) => {
     const savedUser = await user.save();
     res.status(200).send(createToken(user, process.env.ACCESS_TOKEN_SEC, "3d"));
   } catch (err) {
-    res.status(500).send(err || "Internal Server error");
+    res.status(500).send("Internal Server error");
   }
 });
 
@@ -112,9 +118,54 @@ router.post("/changePassword", async (req, res) => {
   try {
     user.password = hashPass;
     const savedUser = await user.save();
-    res.status(200).send(createToken(user, process.env.ACCESS_TOKEN_SEC, "3d"));
+    return res.status(200).send(createToken(user, process.env.ACCESS_TOKEN_SEC, "3d"));
   } catch (err) {
-    res.status(500).send(err || "Internal Server error");
+    return res.status(500).send("Internal Server error");
+  }
+});
+
+router.post("/get-otp", async (req, res) => {
+  const { name } = req.body;
+  //  check exists
+  const user = await User.findOne({ name });
+  if (!user) return res.status(401).send("User not found");
+
+  try {
+    // generate otp
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    const otpObj = {
+      name,
+      otp,
+      time: Date.now(),
+    };
+    otpList.push(otpObj);
+
+    // send otp
+    const config = {
+      headers: {
+        authorization: process.env.SMS_API_KEY,
+        "Content-Type": "application/json",
+      },
+    };
+
+    const data = {
+      route: "q",
+      message: `OTP to reset your password for HotelEngine is ${otp}`,
+      language: "english",
+      flash: 0,
+      numbers: "" + user.phone,
+    };
+
+    const response = await axios.post(OTP_URL, data, config);
+
+    if (response.data.return === true) {
+      return res.status(200).send("Success");
+    }
+
+    return res.status(500).send("Internal Server error");
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send("Internal Server Error, Try again later");
   }
 });
 
