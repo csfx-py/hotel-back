@@ -186,4 +186,28 @@ router.post("/verify-otp", async (req, res) => {
   return res.status(200).send("otp verified");
 });
 
+router.post("/reset-pass", async (req, res) => {
+  const { name, otp, newPassword } = req.body;
+  const otpObj = otpList.find((o) => o.name === name);
+  if (!otpObj) return res.status(401).send("User Not Found, Try again");
+  if (otpObj.otp != otp) return res.status(401).send("Incorrect otp");
+  if (otpObj.time + 300000 < Date.now())
+    return res.status(401).send("otp expired, Try again");
+
+  // check user
+  const user = await User.findOne({ name });
+  if (!user) return res.status(401).send("User not found");
+
+  const salt = await bcrypt.genSalt(10);
+  const hashPass = await bcrypt.hash(newPassword, salt);
+
+  try {
+    user.password = hashPass;
+    const savedUser = await user.save();
+    return res.status(200).send("Password Changed");
+  } catch (err) {
+    return res.status(500).send("Internal Server error");
+  }
+});
+
 module.exports = router;
