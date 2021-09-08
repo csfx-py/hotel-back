@@ -46,7 +46,7 @@ router.delete("/users/:id", verifyAdmin, async (req, res) => {
 });
 
 router.post("/register", async (req, res) => {
-  const { name, email, password, shopName } = req.body;
+  const { name, email, phone, password, shopName } = req.body;
 
   //check existing user
   const nameExists = await User.findOne({ name });
@@ -54,6 +54,9 @@ router.post("/register", async (req, res) => {
   //check existing email
   const mailExists = await User.findOne({ email });
   if (mailExists) return res.status(400).send("Email already registered");
+  //check existing email
+  const phoneExists = await User.findOne({ phone });
+  if (phoneExists) return res.status(400).send("Phone number already registered");
   //check existing shop name
   const shopExists = await User.findOne({ shopName });
   if (shopExists) return res.status(400).send("Shop name already taken");
@@ -65,6 +68,7 @@ router.post("/register", async (req, res) => {
   const user = new User({
     name,
     email,
+    phone,
     password: hashPass,
     shopName,
   });
