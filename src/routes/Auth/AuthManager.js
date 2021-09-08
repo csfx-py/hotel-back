@@ -180,9 +180,9 @@ router.post("/verify-otp", async (req, res) => {
   const { name, otp } = req.body;
   const otpObj = otpList.find((o) => o.name === name);
   if (!otpObj) return res.status(401).send("otp not requested");
-  if (otpObj.otp !== otp) return res.status(401).send("Incorrect otp");
+  if (otpObj.otp != otp) return res.status(401).send("Incorrect otp");
   if (otpObj.time + 300000 < Date.now())
-    return res.status(401).send("otp expired");
+    return res.status(401).send("otp expired, Try again");
   return res.status(200).send("otp verified");
 });
 
