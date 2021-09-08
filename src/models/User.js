@@ -13,6 +13,12 @@ const userSchema = new mongoose.Schema({
     min: 6,
     max: 30,
   },
+  phone: {
+    type: Number,
+    required: true,
+    min: 6000000000,
+    max: 9999999999,
+  },
   password: {
     type: String,
     required: true,
