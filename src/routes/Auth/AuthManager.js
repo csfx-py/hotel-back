@@ -101,6 +101,21 @@ router.post("/login", async (req, res) => {
   res.send(createToken(user, process.env.ACCESS_TOKEN_SEC, "3d"));
 });
 
+// Check if username is taken
+router.post("/check-username", async (req, res) => {
+  try {
+    const { name } = req.body;
+    //check existing user
+    const nameExists = await User.findOne({ name });
+    if (nameExists) {
+      return res.status(400).send("Username already taken");
+    }
+    return res.status(200).send("Username available");
+  } catch (err) {
+    res.status(500).send("Internal Server error");
+  }
+});
+
 router.post("/changePassword", async (req, res) => {
   const { name, oldPassword, newPassword } = req.body;
 
